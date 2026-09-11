@@ -42,22 +42,28 @@
         const h = config.height || 1.33;
         const loop = config.loop !== false;
 
-        let assetHTML = '';
+        // NOTE: media elements are NOT placed inside <a-assets> - iOS Safari hides
+        // that container with display:none, and refuses to decode video frames for
+        // display:none elements (audio still plays, video texture stays black).
+        // Instead they're appended directly to <body>, hidden via opacity so iOS
+        // still renders/decodes them normally.
+        const hiddenStyle = 'position:absolute;width:1px;height:1px;opacity:0.01;pointer-events:none;top:0;left:0;';
+        let mediaHTML = '';
         let entityHTML = '';
 
         if (config.type === 'video') {
           // Target image -> plays a video on top
-          assetHTML = `<video id="media" src="projects/${project}/${config.media}" preload="auto" playsinline webkit-playsinline loop="${loop}"></video>`;
+          mediaHTML = `<video id="media" src="projects/${project}/${config.media}" preload="auto" playsinline webkit-playsinline loop="${loop}" style="${hiddenStyle}"></video>`;
           entityHTML = `<a-video src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0" material="shader: flat"></a-video>`;
         } else if (config.type === 'image-audio') {
           // Target image -> shows a (possibly different) image, plays music/audio underneath
-          assetHTML = `<img id="media" src="projects/${project}/${config.media}">
-                       <audio id="audio" src="projects/${project}/${config.audio}" preload="auto" loop="${loop}"></audio>`;
+          mediaHTML = `<img id="media" src="projects/${project}/${config.media}" style="${hiddenStyle}">
+                       <audio id="audio" src="projects/${project}/${config.audio}" preload="auto" loop="${loop}" style="${hiddenStyle}"></audio>`;
           entityHTML = `<a-image src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0" material="shader: flat"></a-image>
                         <a-entity sound="src: #audio; autoplay: false; loop: ${loop}"></a-entity>`;
         } else {
           // 'image' - just shows a static image, no audio/video
-          assetHTML = `<img id="media" src="projects/${project}/${config.media}">`;
+          mediaHTML = `<img id="media" src="projects/${project}/${config.media}" style="${hiddenStyle}">`;
           entityHTML = `<a-image src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0" material="shader: flat"></a-image>`;
         }
 
@@ -65,14 +71,13 @@
           <a-scene mindar-image="imageTargetSrc: projects/${project}/${config.targetFile}; autoStart: true; uiScanning: no; uiLoading: no;"
                    embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights"
                    vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true">
-            <a-assets>${assetHTML}</a-assets>
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
             <a-entity mindar-image-target="targetIndex: 0">
               ${entityHTML}
             </a-entity>
           </a-scene>`;
 
-        document.body.insertAdjacentHTML('beforeend', sceneHTML);
+        document.body.insertAdjacentHTML('beforeend', mediaHTML + sceneHTML);
 
         function playMedia() {
           const video = document.getElementById('media');

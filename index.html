@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>AR Experience</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    #loading, #error {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #111; color: #fff; display: flex; align-items: center; justify-content: center;
+      font-family: sans-serif; font-size: 18px; text-align: center; padding: 20px; box-sizing: border-box; z-index: 999;
+    }
+    #error { display: none; background: #400; }
+    .tap-hint {
+      position: fixed; bottom: 24px; left: 0; width: 100%; text-align: center;
+      color: #fff; font-family: sans-serif; font-size: 14px; z-index: 998; pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">Loading AR experience…</div>
+  <div id="error">Couldn't load this experience.<br>Check the link and try again.</div>
+  <div class="tap-hint" id="hint" style="display:none;">Point your camera at the target image</div>
+
+  <script>
+    (async function () {
+      const params = new URLSearchParams(window.location.search);
+      const project = params.get('project') || 'sample-wedding';
+      const loadingEl = document.getElementById('loading');
+      const errorEl = document.getElementById('error');
+
+      try {
+        const res = await fetch(`projects/${project}/config.json`);
+        if (!res.ok) throw new Error('Config not found for project: ' + project);
+        const config = await res.json();
+
+        const w = config.width || 1;
+        const h = config.height || 1.33;
+        const loop = config.loop !== false;
+
+        let assetHTML = '';
+        let entityHTML = '';
+
+        if (config.type === 'video') {
+          // Target image -> plays a video on top
+          assetHTML = `<video id="media" src="projects/${project}/${config.media}" preload="auto" playsinline webkit-playsinline loop="${loop}" crossorigin="anonymous"></video>`;
+          entityHTML = `<a-video src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0"></a-video>`;
+        } else if (config.type === 'image-audio') {
+          // Target image -> shows a (possibly different) image, plays music/audio underneath
+          assetHTML = `<img id="media" src="projects/${project}/${config.media}" crossorigin="anonymous">
+                       <audio id="audio" src="projects/${project}/${config.audio}" preload="auto" loop="${loop}"></audio>`;
+          entityHTML = `<a-image src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0"></a-image>
+                        <a-entity sound="src: #audio; autoplay: false; loop: ${loop}"></a-entity>`;
+        } else {
+          // 'image' - just shows a static image, no audio/video
+          assetHTML = `<img id="media" src="projects/${project}/${config.media}" crossorigin="anonymous">`;
+          entityHTML = `<a-image src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0"></a-image>`;
+        }
+
+        const sceneHTML = `
+          <a-scene mindar-image="imageTargetSrc: projects/${project}/${config.targetFile}; autoStart: true; uiScanning: no; uiLoading: no;"
+                   embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights"
+                   vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true">
+            <a-assets>${assetHTML}</a-assets>
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+            <a-entity mindar-image-target="targetIndex: 0">
+              ${entityHTML}
+            </a-entity>
+          </a-scene>`;
+
+        document.body.insertAdjacentHTML('beforeend', sceneHTML);
+
+        function playMedia() {
+          const video = document.getElementById('media');
+          if (video && video.tagName === 'VIDEO') video.play().catch(() => {});
+          const audio = document.getElementById('audio');
+          if (audio) audio.play().catch(() => {});
+        }
+
+        // Mobile browsers block autoplay - first tap unlocks it
+        document.body.addEventListener('click', playMedia);
+
+        const sceneEl = document.querySelector('a-scene');
+        sceneEl.addEventListener('renderstart', () => {
+          loadingEl.style.display = 'none';
+          document.getElementById('hint').style.display = 'block';
+        });
+
+        const targetEntity = document.querySelector('[mindar-image-target]');
+        targetEntity.addEventListener('targetFound', playMedia);
+        targetEntity.addEventListener('targetLost', () => {
+          const video = document.getElementById('media');
+          if (video && video.tagName === 'VIDEO' && config.pauseOnLost) video.pause();
+        });
+
+      } catch (err) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'flex';
+        console.error(err);
+      }
+    })();
+  </script>
+</body>
+</html>

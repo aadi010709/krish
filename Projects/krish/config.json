@@ -1,0 +1,9 @@
+{
+  "targetFile": "target.mind",
+  "type": "video",
+  "media": "krish.mp4",
+  "width": 1,
+  "height": 1.4,
+  "loop": true,
+  "pauseOnLost": true
+}

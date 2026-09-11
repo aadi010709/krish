@@ -47,7 +47,7 @@
         // display:none elements (audio still plays, video texture stays black).
         // Instead they're appended directly to <body>, hidden via opacity so iOS
         // still renders/decodes them normally.
-        const hiddenStyle = 'position:absolute;width:1px;height:1px;opacity:0.01;pointer-events:none;top:0;left:0;';
+        const hiddenStyle = 'position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;';
         let mediaHTML = '';
         let entityHTML = '';
 

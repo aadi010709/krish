@@ -47,18 +47,18 @@
 
         if (config.type === 'video') {
           // Target image -> plays a video on top
-          assetHTML = `<video id="media" src="projects/${project}/${config.media}" preload="auto" playsinline webkit-playsinline loop="${loop}" crossorigin="anonymous"></video>`;
-          entityHTML = `<a-video src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0"></a-video>`;
+          assetHTML = `<video id="media" src="projects/${project}/${config.media}" preload="auto" playsinline webkit-playsinline loop="${loop}"></video>`;
+          entityHTML = `<a-video src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0" material="shader: flat"></a-video>`;
         } else if (config.type === 'image-audio') {
           // Target image -> shows a (possibly different) image, plays music/audio underneath
-          assetHTML = `<img id="media" src="projects/${project}/${config.media}" crossorigin="anonymous">
+          assetHTML = `<img id="media" src="projects/${project}/${config.media}">
                        <audio id="audio" src="projects/${project}/${config.audio}" preload="auto" loop="${loop}"></audio>`;
-          entityHTML = `<a-image src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0"></a-image>
+          entityHTML = `<a-image src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0" material="shader: flat"></a-image>
                         <a-entity sound="src: #audio; autoplay: false; loop: ${loop}"></a-entity>`;
         } else {
           // 'image' - just shows a static image, no audio/video
-          assetHTML = `<img id="media" src="projects/${project}/${config.media}" crossorigin="anonymous">`;
-          entityHTML = `<a-image src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0"></a-image>`;
+          assetHTML = `<img id="media" src="projects/${project}/${config.media}">`;
+          entityHTML = `<a-image src="#media" width="${w}" height="${h}" position="0 0 0" rotation="0 0 0" material="shader: flat"></a-image>`;
         }
 
         const sceneHTML = `
